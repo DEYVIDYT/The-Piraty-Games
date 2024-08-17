@@ -411,21 +411,14 @@ async function searchGames() {
     const sharedSource = urlParams.get('source');
     const sharedConsole = urlParams.get('console');
 
-    const query = sharedTitle ? normalizeString(sharedTitle) : normalizeString(document.getElementById('search-input').value);
+    const query = sharedTitle || normalizeString(document.getElementById('search-input').value);
     const selectedSource = sharedSource || document.getElementById('source-select').value;
     const selectedConsole = sharedConsole || document.getElementById('console-select').value;
 
     const resultsContainer = document.getElementById('results');
-    const loadingSpinner = document.getElementById('loading-spinner');
-
-    // Exibir o spinner de carregamento e esconder os resultados
-    loadingSpinner.style.display = 'block';
-    resultsContainer.style.display = 'none';
     resultsContainer.innerHTML = '';
 
     const sourcesToSearch = selectedConsole !== 'all' ? sourcesByConsole[selectedConsole] : Object.assign({}, ...Object.values(sourcesByConsole));
-
-    let gameFound = false;
 
     for (const [sourceName, sourceUrl] of Object.entries(sourcesToSearch)) {
         if (selectedSource !== 'all' && selectedSource !== sourceName) {
@@ -439,9 +432,7 @@ async function searchGames() {
             const filteredGames = data.downloads.filter(game => normalizeString(game.title).includes(query));
 
             if (filteredGames.length > 0) {
-                gameFound = true;
-
-                filteredGames.forEach(game => {
+                for (const game of filteredGames) {
                     const gameElement = document.createElement('div');
                     gameElement.classList.add('game');
 
@@ -488,22 +479,19 @@ async function searchGames() {
                     gameElement.appendChild(shareButton);
 
                     resultsContainer.appendChild(gameElement);
-                });
+                }
             }
         } catch (error) {
             console.error(`Erro ao buscar jogos da fonte ${sourceName}:`, error);
         }
     }
 
-    // Esconder o spinner de carregamento e exibir os resultados
-    loadingSpinner.style.display = 'none';
-    resultsContainer.style.display = 'block';
-
-    if (!gameFound) {
+    if (resultsContainer.innerHTML === '') {
         resultsContainer.innerHTML = '<p>Nenhum jogo encontrado.</p>';
     }
 }
 
+// Executar a função de busca automaticamente se os parâmetros de compartilhamento estiverem presentes
 window.addEventListener('load', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('title') && urlParams.has('source') && urlParams.has('console')) {
