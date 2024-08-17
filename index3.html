@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisar Jogos</title>
+    <style>
+        /* Estilos existentes */
+                body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .toolbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #007aff;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            height: 60px;
+            box-sizing: border-box;
+            color: #fff;
+        }
+        .toolbar .menu-button {
+            position: absolute;
+            left: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .toolbar h1 {
+            margin: 0;
+            font-size: 20px;
+            text-align: center;
+        }
+        .toolbar h1 a {
+            color: #fff;
+            text-decoration: none;
+        }
+        .toolbar h1 a:hover {
+            text-decoration: underline;
+        }
+        .menu {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            background-color: #f7f7f8;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 0;
+            z-index: 999;
+        }
+        .menu.active {
+            display: flex;
+        }
+        .menu a {
+            text-decoration: none;
+            color: #007aff;
+            padding: 10px 20px;
+            font-size: 16px;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+            display: block;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .menu a:last-child {
+            border-bottom: none;
+        }
+        .menu a:hover {
+            background-color: #e0e0e0;
+        }
+        .search-container {
+            text-align: center;
+            margin-top: 80px;
+            padding: 0 20px;
+        }
+        .console-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .console-container img {
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+            max-width: 50px; /* Define a largura máxima das imagens */
+            max-height: 50px; /* Define a altura máxima das imagens */
+            object-fit: contain; /* Ajusta a imagem para caber no tamanho máximo sem distorcer */
+        }
+        .console-container img.selected {
+            border-color: #007aff;
+        }
+        input, button, select {
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 12px;
+            border: 1px solid #007aff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            margin: 8px 0;
+            outline: none;
+            transition: all 0.3s ease;
+            background-color: #fff;
+            color: #333;
+        }
+        input:focus, select:focus, button:focus {
+            border-color: #007aff;
+            box-shadow: 0 0 8px rgba(0, 122, 255, 0.5);
+        }
+        button {
+            background-color: #007aff;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background-color: #0051a8;
+        }
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .game {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            padding: 15px;
+            width: 90%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+            transition: transform 0.3s ease;
+            border: 1px solid #ddd;
+        }
+        .game:hover {
+            transform: scale(1.02);
+        }
+        .game-details {
+            width: 100%;
+        }
+        .game h2 {
+            font-size: 18px;
+            margin: 0 0 10px;
+            color: #333;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .game p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .magnet-link {
+            color: #007aff;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+        }
+        .magnet-link:hover {
+            text-decoration: underline;
+        }
+        .source {
+            font-weight: 600;
+            color: #999;
+            margin-bottom: 10px;
+        }
+        .credits {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 16px;
+            color: #007aff;
+        }
+        .credits a {
+            color: #007aff;
+            text-decoration: none;
+        }
+        .credits a:hover {
+            text-decoration: underline;
+        }
+
+        /* Tema escuro */
+        .dark-mode {
+            background-color: #333;
+            color: #fff;
+        }
+        .dark-mode .toolbar {
+            background-color: #222;
+        }
+        .dark-mode .menu {
+            background-color: #222;
+        }
+        .dark-mode input, .dark-mode select, .dark-mode button {
+            background-color: #555;
+            color: #fff;
+            border: 1px solid #888;
+        }
+        .dark-mode input:focus, .dark-mode select:focus, .dark-mode button:focus {
+            border-color: #007aff;
+            box-shadow: 0 0 8px rgba(0, 122, 255, 0.5);
+        }
+        .dark-mode .game {
+            background-color: #444;
+            border: 1px solid #555;
+        }
+        .dark-mode .game h2, .dark-mode .game p {
+            color: #ddd;
+        }
+        .dark-mode .magnet-link {
+            color: #007aff;
+        }
+        .dark-mode .credits {
+            color: #007aff;
+        }
+        /* Estilo do diálogo */
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .dialog {
+            background: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .dialog img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .dialog .title {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .dialog .message {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .dialog .close-button {
+            background: #007aff;
+            color: #fff;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background 0.3s ease;
+        }
+        .dialog .close-button:hover {
+            background: #0051a8;
+        }
+        .spinner {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <div class="menu-button" onclick="toggleMenu()">☰</div>
+        <h1><a href="https://youtube.com/@hail-games?si=ShSKldSxL5pDIyt-" target="_blank">The Piraty Games</a></h1>
+    </div>
+    <div id="menu" class="menu">
+        <a href="https://chat.whatsapp.com/CXSrf49mzhXEKQsJzxvZ8H" target="_blank">Grupo WhatsApp</a>
+        <a href="https://youtube.com/@hail-games?si=BnlRnwJSehCRV9bw" target="_blank">Canal YouTube</a>
+        <a href="https://github.com/DEYVIDYT/The-Piraty-Games/releases/download/Codigo/The.Piraty.Games.Web.zip" target="_blank">Código Fonte</a>
+    </div>
+
+    <div class="search-container">
+        <div class="console-container">
+            <img src="Photos/pc.jpeg" alt="PC" title="PC" onclick="selectConsole('PC')">
+            <img src="Photos/ps2.jpeg" alt="PS2" title="PS2" onclick="selectConsole('PS2')">
+            <img src="Photos/Switch.png" alt="Switch" title="Switch" onclick="selectConsole('Switch')">
+        </div>
+        <input type="text" id="search-input" placeholder="Digite o nome do jogo">
+        <select id="source-select">
+            <option value="all">Todas as Fontes</option>
+        </select>
+        <button id="search-button" onclick="searchGames()">Pesquisar</button>
+    </div>
+
+    <div id="results" class="results-container"></div>
+
+    <!-- Spinner de carregamento -->
+    <div id="loading-spinner" class="spinner"></div>
+
+    <!-- Diálogo -->
+    <div id="dialog" class="dialog-overlay">
+        <div class="dialog">
+            <div class="title">The Piraty Games</div>
+            <div class="message">The Piraty Games é um site sem fins lucrativos dedicado a reunir várias fontes de jogos para diversos consoles.</div>
+            <img src="Photos/The_Piraty_Games.jpeg" alt="Capa do site">
+            <button class="close-button" onclick="closeDialog()">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        // Função para mostrar o diálogo
+        function showDialog() {
+            document.getElementById('dialog').style.display = 'flex';
+        }
+
+        // Função para fechar o diálogo
+        function closeDialog() {
+            document.getElementById('dialog').style.display = 'none';
+        }
+
+        let selectedConsole = 'all';  // Inicialmente, todos os consoles são selecionados
+
+        const sourcesByConsole = {
+            "PC": {
+                "Dodi": "local-sources/PC/Dodi.json",
+                "Empress": "local-sources/PC/Empress.json",
+                "Fitgirl": "local-sources/PC/Fitgirl.json",
+                "Free Gog": "local-sources/PC/Free Gog.json",
+                "KaOsKrew": "local-sources/PC/KaOsKrew.json",
+                "OnlineFix": "local-sources/PC/OnlineFix.json",
+                "Tyni Repacks": "local-sources/PC/Tyni Repacks.json",
+                "Xatab": "local-sources/PC/Xatab.json",
+                "Rutracker": "local-sources/PC/Rutracker.json",
+                "gamestorrentsfm": "local-sources/PC/gamestorrentsfm.json",
+                "SteamRip Pre-installed": "local-sources/PC/SteamRip.json",
+            },
+            "PS2": {
+                "Roms PS2 CHD GDRIVE": "local-sources/ps2/Roms_PS2_CHD_GDRIVE.json",
+            },
+            "Switch": {
+                "Roms NS TENDOKU": "local-sources/NINTENDO SWITCH/NS.json",
+            },
+        };
+
+        function selectConsole(console) {
+            selectedConsole = console;
+            document.querySelectorAll('.console-container img').forEach(img => {
+                img.classList.remove('selected');
+            });
+            document.querySelector(`.console-container img[alt="${console}"]`).classList.add('selected');
+            updateSourceOptions();
+        }
+
+        function updateSourceOptions() {
+            const sourceSelect = document.getElementById('source-select');
+            sourceSelect.innerHTML = '<option value="all">Todas as Fontes</option>';
+
+            if (selectedConsole !== 'all') {
+                const sources = sourcesByConsole[selectedConsole];
+                for (const [sourceName, sourceUrl] of Object.entries(sources)) {
+                    const option = document.createElement('option');
+                    option.value = sourceName;
+                    option.textContent = sourceName;
+                    sourceSelect.appendChild(option);
+                }
+            } else {
+                // Se o console for "Todos", adicionar todas as fontes de todos os consoles
+                for (const [console, sources] of Object.entries(sourcesByConsole)) {
+                    for (const [sourceName, sourceUrl] of Object.entries(sources)) {
+                        const option = document.createElement('option');
+                        option.value = sourceName;
+                        option.textContent = `${console} - ${sourceName}`;
+                        sourceSelect.appendChild(option);
+                    }
+                }
+            }
+        }
+
+        async function searchGames(sharedGame = null) {
+            const query = normalizeString(document.getElementById('search-input').value);
+            const selectedSource = document.getElementById('source-select').value;
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '';
+
+            // Mostrar o spinner de carregamento
+            document.getElementById('loading-spinner').style.display = 'block';
+
+            const sourcesToSearch = selectedConsole !== 'all' ? sourcesByConsole[selectedConsole] : Object.assign({}, ...Object.values(sourcesByConsole));
+
+            for (const [sourceName, sourceUrl] of Object.entries(sourcesToSearch)) {
+                if (selectedSource !== 'all' && selectedSource !== sourceName) {
+                    continue;
+                }
+
+                try {
+                    const response = await fetch(sourceUrl);
+                    const data = await response.json();
+
+                    const filteredGames = data.downloads.filter(game => normalizeString(game.title).includes(query));
+
+                    if (filteredGames.length > 0) {
+                        for (const game of filteredGames) {
+                            // Se sharedGame estiver definido, filtre apenas o jogo compartilhado
+                            if (sharedGame && (sharedGame.title !== game.title || sharedGame.source !== sourceName)) {
+                                continue;
+                            }
+
+                            const gameElement = document.createElement('div');
+                            gameElement.classList.add('game');
+
+                            const gameDetails = document.createElement('div');
+                            gameDetails.classList.add('game-details');
+                            gameElement.appendChild(gameDetails);
+
+                            const sourceElement = document.createElement('div');
+                            sourceElement.classList.add('source');
+                            sourceElement.textContent = `Fonte: ${sourceName}`;
+                            gameDetails.appendChild(sourceElement);
+
+                            const gameTitle = document.createElement('h2');
+                            gameTitle.textContent = game.title;
+                            gameDetails.appendChild(gameTitle);
+
+                            const gameDate = document.createElement('p');
+                            gameDate.textContent = `Data de Upload: ${new Date(game.uploadDate).toLocaleDateString()}`;
+                            gameDetails.appendChild(gameDate);
+
+                            const gameSize = document.createElement('p');
+                            gameSize.textContent = `Tamanho do Arquivo: ${game.fileSize}`;
+                            gameDetails.appendChild(gameSize);
+
+                            game.uris.forEach(uri => {
+                                const magnetLink = document.createElement('a');
+                                magnetLink.href = uri;
+                                const hostname = getHostname(uri);
+                                magnetLink.textContent = uri.startsWith('magnet:') ? `Download via torrent` : `Download via ${hostname}`;
+                                magnetLink.classList.add('magnet-link');
+                                magnetLink.target = '_blank';
+                                gameDetails.appendChild(magnetLink);
+                            });
+
+                            const shareButton = document.createElement('button');
+                            shareButton.textContent = 'Compartilhar';
+                            shareButton.onclick = () => {
+                                const shareUrl = `${window.location.origin}${window.location.pathname}?title=${encodeURIComponent(game.title)}&source=${encodeURIComponent(sourceName)}`;
+                                navigator.share({
+                                    title: game.title,
+                                    url: shareUrl
+                                }).catch(err => console.error('Erro ao compartilhar:', err));
+                            };
+                            gameElement.appendChild(shareButton);
+
+                            resultsContainer.appendChild(gameElement);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Erro ao buscar jogos da fonte ${sourceName}:`, error);
+                }
+            }
+
+            // Ocultar o spinner de carregamento
+            document.getElementById('loading-spinner').style.display = 'none';
+
+            if (resultsContainer.innerHTML === '') {
+                resultsContainer.innerHTML = '<p>Nenhum jogo encontrado.</p>';
+            }
+        }
+
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateSourceOptions();
+            const sharedTitle = getQueryParam('title');
+            const sharedSource = getQueryParam('source');
+
+            if (sharedTitle && sharedSource) {
+                searchGames({ title: sharedTitle, source: sharedSource });
+            } else {
+                showDialog();  // Mostrar o diálogo ao carregar a página
+            }
+        });
+
+        function normalizeString(str) {
+            return str.toLowerCase().replace(/\s+/g, '');
+        }
+
+        function getHostname(url) {
+            const { hostname } = new URL(url);
+            return hostname.replace('www.', '');
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
