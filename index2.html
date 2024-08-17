@@ -389,9 +389,16 @@
             }
         }
 
-       async function searchGames() {
-    const query = normalizeString(document.getElementById('search-input').value);
-    const selectedSource = document.getElementById('source-select').value;
+async function searchGames() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedTitle = urlParams.get('title');
+    const sharedSource = urlParams.get('source');
+    const sharedConsole = urlParams.get('console');
+
+    const query = sharedTitle || normalizeString(document.getElementById('search-input').value);
+    const selectedSource = sharedSource || document.getElementById('source-select').value;
+    const selectedConsole = sharedConsole || document.getElementById('console-select').value;
+
     const resultsContainer = document.getElementById('results');
     resultsContainer.innerHTML = '';
 
@@ -467,6 +474,15 @@
         resultsContainer.innerHTML = '<p>Nenhum jogo encontrado.</p>';
     }
 }
+
+// Executar a função de busca automaticamente se os parâmetros de compartilhamento estiverem presentes
+window.addEventListener('load', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('title') && urlParams.has('source') && urlParams.has('console')) {
+        searchGames();
+    }
+});
+
 
 
         function normalizeString(str) {
