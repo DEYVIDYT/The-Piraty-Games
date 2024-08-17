@@ -1,3 +1,4 @@
+corrija o sistema de compartilhamento Ja que agora tem console faça com que quando o usuário acessar a url de compartilhamento ele veja o jogo que foi compartilhado 
 
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -282,25 +283,9 @@
         .dialog .close-button:hover {
             background: #0051a8;
         }
-        #loading-spinner {
-    display: none;
-    text-align: center;
-    font-size: 1.5em;
-    color: #333;
-    margin-top: 20px;
-}
-
-#results {
-    display: none; /* Esconde os resultados enquanto a busca está em andamento */
-}
-
     </style>
 </head>
 <body>
-<div id="loading-spinner" style="display: none;">
-    <p>Carregando...</p>
-</div>
-
     <div class="toolbar">
         <div class="menu-button" onclick="toggleMenu()">☰</div>
         <h1><a href="https://youtube.com/@hail-games?si=ShSKldSxL5pDIyt-" target="_blank">The Piraty Games</a></h1>
@@ -405,16 +390,9 @@
             }
         }
 
-async function searchGames() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const sharedTitle = urlParams.get('title');
-    const sharedSource = urlParams.get('source');
-    const sharedConsole = urlParams.get('console');
-
-    const query = sharedTitle || normalizeString(document.getElementById('search-input').value);
-    const selectedSource = sharedSource || document.getElementById('source-select').value;
-    const selectedConsole = sharedConsole || document.getElementById('console-select').value;
-
+async function searchGames(sharedGame = null) {
+    const query = normalizeString(document.getElementById('search-input').value);
+    const selectedSource = document.getElementById('source-select').value;
     const resultsContainer = document.getElementById('results');
     resultsContainer.innerHTML = '';
 
@@ -433,6 +411,11 @@ async function searchGames() {
 
             if (filteredGames.length > 0) {
                 for (const game of filteredGames) {
+                    // Se sharedGame estiver definido, filtre apenas o jogo compartilhado
+                    if (sharedGame && (sharedGame.title !== game.title || sharedGame.source !== sourceName)) {
+                        continue;
+                    }
+
                     const gameElement = document.createElement('div');
                     gameElement.classList.add('game');
 
@@ -470,7 +453,7 @@ async function searchGames() {
                     const shareButton = document.createElement('button');
                     shareButton.textContent = 'Compartilhar';
                     shareButton.onclick = () => {
-                        const shareUrl = `${window.location.origin}${window.location.pathname}?title=${encodeURIComponent(game.title)}&source=${encodeURIComponent(sourceName)}&console=${encodeURIComponent(selectedConsole)}`;
+                        const shareUrl = `${window.location.origin}${window.location.pathname}?title=${encodeURIComponent(game.title)}&source=${encodeURIComponent(sourceName)}`;
                         navigator.share({
                             title: game.title,
                             url: shareUrl
@@ -491,14 +474,22 @@ async function searchGames() {
     }
 }
 
-// Executar a função de busca automaticamente se os parâmetros de compartilhamento estiverem presentes
-window.addEventListener('load', () => {
+function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('title') && urlParams.has('source') && urlParams.has('console')) {
-        searchGames();
+    return urlParams.get(param);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateSourceOptions();
+    const sharedTitle = getQueryParam('title');
+    const sharedSource = getQueryParam('source');
+
+    if (sharedTitle && sharedSource) {
+        searchGames({ title: sharedTitle, source: sharedSource });
+    } else {
+        showDialog();  // Mostrar o diálogo ao carregar a página
     }
 });
-
 
 
         function normalizeString(str) {
