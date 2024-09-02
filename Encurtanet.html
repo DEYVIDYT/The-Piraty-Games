@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encurtador de URLs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            font-size: 14px;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #333;
+            word-wrap: break-word;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Encurtador de URLs</h1>
+        <form id="urlForm">
+            <label for="urlInput">Insira o link que deseja encurtar:</label>
+            <input type="text" id="urlInput" name="urlInput" placeholder="https://example.com" required>
+            <button type="submit">Encurtar</button>
+        </form>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('urlForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const url = document.getElementById('urlInput').value;
+            const alias = Math.random().toString(36).substring(2, 30); // Gera um alias aleatório de até 28 caracteres
+            const apiKey = '1a74a51a03ac9cbff2c467b1c5e7a7b01e0d46b0';
+            const apiUrl = `https://encurta.net/api?api=${apiKey}&url=${encodeURIComponent(url)}&alias=${alias}&type=1`;
+
+            try {
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Exibe o JSON completo para o usuário
+                document.getElementById('result').innerHTML = `
+                    <p>Resposta da API:</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+
+                if (data.status === "success") {
+                    document.getElementById('result').innerHTML += `
+                        <p>URL encurtada: <a href="${data.shortenedUrl}" target="_blank">${data.shortenedUrl}</a></p>
+                    `;
+                } else {
+                    document.getElementById('result').innerHTML += `
+                        <p>Erro ao encurtar a URL.</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('result').innerHTML = `
+                    <p>Erro ao se comunicar com o serviço de encurtamento: ${error.message}</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
