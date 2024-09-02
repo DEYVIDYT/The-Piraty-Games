@@ -342,17 +342,15 @@
     </div>
 
     <script>
-        // Função para mostrar o diálogo
         function showDialog() {
             document.getElementById('dialog').style.display = 'flex';
         }
 
-        // Função para fechar o diálogo
         function closeDialog() {
             document.getElementById('dialog').style.display = 'none';
         }
 
-        let selectedConsole = 'all';  // Inicialmente, todos os consoles são selecionados
+        let selectedConsole = 'all'; 
 
         const sourcesByConsole = {
             "PC": {
@@ -398,7 +396,6 @@
                     sourceSelect.appendChild(option);
                 }
             } else {
-                // Se o console for "Todos", adicionar todas as fontes de todos os consoles
                 for (const [console, sources] of Object.entries(sourcesByConsole)) {
                     for (const [sourceName, sourceUrl] of Object.entries(sources)) {
                         const option = document.createElement('option');
@@ -416,7 +413,6 @@
             const resultsContainer = document.getElementById('results');
             resultsContainer.innerHTML = '';
 
-            // Mostrar o spinner de carregamento
             document.getElementById('loading-spinner').style.display = 'block';
 
             const sourcesToSearch = selectedConsole !== 'all' ? sourcesByConsole[selectedConsole] : Object.assign({}, ...Object.values(sourcesByConsole));
@@ -434,7 +430,6 @@
 
                     if (filteredGames.length > 0) {
                         for (const game of filteredGames) {
-                            // Se sharedGame estiver definido, filtre apenas o jogo compartilhado
                             if (sharedGame && (sharedGame.title !== game.title || sharedGame.source !== sourceName)) {
                                 continue;
                             }
@@ -465,11 +460,15 @@
 
                             game.uris.forEach(uri => {
                                 const magnetLink = document.createElement('a');
-                                magnetLink.href = 'javascript:void(0);';
-                                magnetLink.onclick = () => encurtarEredirecionar(uri, game.title, sourceName);
+                                magnetLink.href = uri;
                                 const hostname = getHostname(uri);
                                 magnetLink.textContent = uri.startsWith('magnet:') ? `Download via torrent` : `Download via ${hostname}`;
                                 magnetLink.classList.add('magnet-link');
+                                magnetLink.target = '_blank';
+                                magnetLink.onclick = async function(event) {
+                                    event.preventDefault(); 
+                                    await encurtarLink(uri, hostname);
+                                };
                                 gameDetails.appendChild(magnetLink);
                             });
 
@@ -492,7 +491,6 @@
                 }
             }
 
-            // Ocultar o spinner de carregamento
             document.getElementById('loading-spinner').style.display = 'none';
 
             if (resultsContainer.innerHTML === '') {
@@ -500,54 +498,61 @@
             }
         }
 
-        async function encurtarEredirecionar(url, gameTitle, sourceName) {
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateSourceOptions();
+            showDialog();
+
+            const titleParam = getQueryParam('title');
+            const sourceParam = getQueryParam('source');
+
+            if (titleParam && sourceParam) {
+                document.getElementById('search-input').value = titleParam;
+                document.getElementById('source-select').value = sourceParam;
+                searchGames({ title: titleParam, source: sourceParam });
+            }
+        });
+
+        async function encurtarLink(urlOriginal, hostname) {
             try {
-                const apiKey = '1a74a51a03ac9cbff2c467b1c5e7a7b01e0d46b0'; // Substitua pela sua chave API
-                const alias = `${encodeURIComponent(gameTitle)}_${encodeURIComponent(sourceName)}`;
-                const encurtaUrl = `https://encurta.net/api?api=${apiKey}&url=${encodeURIComponent(url)}&alias=${alias}`;
+                const response = await fetch('https://api.encurta.net', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url: urlOriginal,
+                        customAlias: hostname.substring(0, 30)
+                    })
+                });
 
-                const response = await fetch(encurtaUrl);
-                const data = await response.json();
+                if (response.ok) {
+                    const data = await response.json();
+                    const shortUrl = data.shortenedUrl;
 
-                if (data.status === 'sucesso') {
-                    window.location.href = data.shortenedUrl;
+                    const confirmation = confirm(`Você será redirecionado para o link encurtado: ${shortUrl}. Deseja continuar?`);
+
+                    if (confirmation) {
+                        window.open(shortUrl, '_blank');
+                    }
                 } else {
-                    alert('Erro ao encurtar o link.');
+                    console.error('Erro ao encurtar o link:', response.statusText);
                 }
             } catch (error) {
                 console.error('Erro ao encurtar o link:', error);
-                alert('Erro ao encurtar o link.');
             }
-        }
-
-        function getHostname(url) {
-            const link = document.createElement('a');
-            link.href = url;
-            return link.hostname;
         }
 
         function normalizeString(str) {
-            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            return str.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
-        // Função para alternar o menu de navegação
-        function toggleMenu() {
-            const menu = document.getElementById('menu');
-            if (menu.style.display === 'block') {
-                menu.style.display = 'none';
-            } else {
-                menu.style.display = 'block';
-            }
-        }
-
-        // Verificar se há parâmetros de URL para compartilhamento
-        const urlParams = new URLSearchParams(window.location.search);
-        const sharedTitle = urlParams.get('title');
-        const sharedSource = urlParams.get('source');
-
-        if (sharedTitle && sharedSource) {
-            const sharedGame = { title: sharedTitle, source: sharedSource };
-            searchGames(sharedGame);
+        function getHostname(url) {
+            return new URL(url).hostname;
         }
     </script>
 </body>
